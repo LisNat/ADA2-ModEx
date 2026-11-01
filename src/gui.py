@@ -5,7 +5,7 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 
 from algoritmos import modexFB, modexV, modexPD
-from entrada_salida import leer_entrada, escribir_salida
+from entrada_salida import DECIMALES, leer_entrada, escribir_salida
 
 class ModExApp:
     def __init__(self, root):
@@ -158,7 +158,7 @@ class ModExApp:
         texto_tiempo = "< 0.001 s" if tiempo_ejecucion < 0.001 else f"{tiempo_ejecucion:.4f} s"
 
         self.lbl_resultados.config(
-            text=f"[{nombre_alg}] -> Extremismo: {ext:.2f} | Esfuerzo: {esf}/{self.R_max} | Tiempo: {texto_tiempo}",
+            text=f"[{nombre_alg}] -> Extremismo: {ext:.{DECIMALES}f} | Esfuerzo: {esf}/{self.R_max} | Tiempo: {texto_tiempo}",
             foreground="navy"
         )
 

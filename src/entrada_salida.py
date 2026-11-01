@@ -3,8 +3,8 @@ from fractions import Fraction
 from modelo import Agente, RedSocial
 
 # Cantidad de decimales con que se escribe Ext en el archivo de salida.
-# Pendiente de confirmar con el monitor.
-DECIMALES = 2
+# 3 decimales, igual que la tabla de resultados del profesor (confirmar con el monitor).
+DECIMALES = 3
 
 
 # Lee un archivo de entrada y construye la red social.
