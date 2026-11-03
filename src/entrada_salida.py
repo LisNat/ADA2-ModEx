@@ -2,13 +2,9 @@ from fractions import Fraction
 
 from modelo import Agente, RedSocial
 
-# Cantidad de decimales con que se escribe Ext en el archivo de salida.
-# 3 decimales, igual que la tabla de resultados del profesor (confirmar con el monitor).
 DECIMALES = 3
 
-
-# Lee un archivo de entrada y construye la red social.
-# Formato: n, luego n lineas "opinion, receptividad, influencia", luego Rmax.
+# Lee un archivo de entrada y construye la red social
 def leer_entrada(ruta):
     with open(ruta, "r", encoding="utf-8") as archivo:
         lineas = [
@@ -41,7 +37,7 @@ def leer_entrada(ruta):
                 f"Formato incorrecto en el agente {i - 1}."
             )
 
-        # Fraction("0.9") es exacto; float("0.9") no lo es.
+        # Usamos Fraction por exactitud a diferencia de float 
         opinion = int(partes[0].strip())
         receptividad = Fraction(partes[1].strip())
         influencia = Fraction(partes[2].strip())
@@ -55,8 +51,7 @@ def leer_entrada(ruta):
     return RedSocial(agentes, presupuesto)
 
 
-# Escribe la salida en el formato del enunciado: Ext, Esfuerzo y luego un 0/1 por agente.
-# resultado es una tupla (estrategia, esfuerzo, extremismo).
+# Escribe la salida en el formato del enunciado
 def escribir_salida(ruta, resultado):
     estrategia, esfuerzo, extremismo = resultado
 
@@ -68,8 +63,8 @@ def escribir_salida(ruta, resultado):
             archivo.write(f"{valor}\n")
 
 
-# Lee un archivo de salida y devuelve (estrategia, esfuerzo, extremismo).
-# Si se pasa n, verifica que la estrategia tenga un valor por agente.
+# Lee un archivo de salida y devuelve (estrategia, esfuerzo, extremismo)
+# Si se pasa n, verifica que la estrategia tenga un valor por agente
 def leer_salida(ruta, n=None):
     with open(ruta, "r", encoding="utf-8") as archivo:
         lineas = [
