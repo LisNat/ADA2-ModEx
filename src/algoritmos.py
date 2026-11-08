@@ -45,8 +45,10 @@ def modexFB(red, callback_progreso=None):
                 mejor_beneficio = beneficio
                 mejor_estrategia = estrategia
 
+        # Función de actualización de progreso
         if callback_progreso is not None:
-            if i % int(total/10) == 0 or i == total - 1:
+            interval = max(1, int(total / 10))
+            if i % interval == 0 or i == total - 1:
                 callback_progreso((i + 1) / total * 100)
 
     return (
@@ -61,27 +63,22 @@ def modexV(red):
     n = len(red.agentes)
 
     estrategia = [0] * n
+    candidatos = [i for i in range(n)]
 
-    # Primero se toman los agentes que no requieren esfuerzo
-    for i in range(n):
-        if costos[i] == 0 and beneficios[i] > 0:
-            estrategia[i] = 1
-
-    # Se ordenan los demás según su beneficio por unidad de esfuerzo
-    candidatos = [
-        i for i in range(n)
-        if costos[i] > 0 and beneficios[i] > 0
-    ]
-
+    # Se ordenan los candidatos según su beneficio/costo:
+    # - Si beneficio[i] = 0 => beneficio/costo = 0
+    # - Si costos[i]=0 y beneficio[i]>0 => beneficio/cost = infinity
     candidatos.sort(
-        key=lambda i: Fraction(beneficios[i], costos[i]),
-        reverse=True
+    key=lambda i: (
+        0 if beneficios[i] == 0
+        else float('inf') if costos[i] == 0 and beneficios[i] >= 0
+        else Fraction(beneficios[i], costos[i])
+    ),
+    reverse=True
     )
 
-    esfuerzo = sum(
-        costos[i] for i in range(n) if estrategia[i] == 1
-    )
-
+    # Selección en orden de candidatos que no superen el máximo de costo
+    esfuerzo = 0
     for i in candidatos:
         if esfuerzo + costos[i] <= red.presupuesto_maximo:
             estrategia[i] = 1
