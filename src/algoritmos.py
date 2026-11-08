@@ -1,51 +1,52 @@
 from fractions import Fraction
 from math import lcm
 
-
+# Cálculo de costos y beneficio de cada agente de la red
 def preparar_datos(red):
     costos = [agente.costo_moderacion() for agente in red.agentes]
 
-    denominador = 1
-    for agente in red.agentes:
-        denominador = lcm(
-            denominador,
-            Fraction(agente.influencia).denominator
-        )
-
     beneficios = []
     for agente in red.agentes:
-        beneficio = Fraction(agente.opinion) ** 2 * agente.influencia
-        beneficios.append(int(beneficio * denominador))
+        beneficios.append(Fraction(agente.opinion) ** 2 * agente.influencia)
 
     return costos, beneficios
 
-
+# Algoritmo por fuerza bruta:
+# - Genera todas las estrategias posibles
+# - Determina aquellas que son viable
+# - Escoge la que maximiza la reducción en extremismo (beneficio)
 def modexFB(red, callback_progreso=None):
     costos, beneficios = preparar_datos(red)
     n = len(red.agentes)
-    total = 2 ** n
+    total = 2 ** n # Número máximo de estrategias
 
+    # Valores iniciales de comparación
     mejor_estrategia = None
     mejor_beneficio = -1
 
+    # Ciclo principal para recorrer todas las estrategias posibles
     for i in range(total):
+        # Separar los e_i de la estrategia
         estrategia = [(i >> j) & 1 for j in range(n)]
 
+        # Cálculo del costo total de la estrategia
         esfuerzo = sum(
             costos[j] for j in range(n) if estrategia[j] == 1
         )
-
+        
         if esfuerzo <= red.presupuesto_maximo:
+            # Cálculo del beneficio
             beneficio = sum(
                 beneficios[j] for j in range(n) if estrategia[j] == 1
             )
 
+            # Comparación con la mejor hasta ahora
             if beneficio > mejor_beneficio:
                 mejor_beneficio = beneficio
                 mejor_estrategia = estrategia
 
         if callback_progreso is not None:
-            if i % 10000 == 0 or i == total - 1:
+            if i % int(total/10) == 0 or i == total - 1:
                 callback_progreso((i + 1) / total * 100)
 
     return (
