@@ -1,3 +1,7 @@
 __pycache__/
 *.pyc
 enunciado_proyecto.pdf
+dist/
+build/
+*.spec
+data/_tmp_salida_test.txt
