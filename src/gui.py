@@ -6,12 +6,13 @@ from tkinter import ttk, filedialog, messagebox
 
 from algoritmos import modexFB, modexV, modexPD
 from entrada_salida import DECIMALES, leer_entrada, escribir_salida
+from verificador import verificar_salida
 
 class ModExApp:
     def __init__(self, root):
         self.root = root
         self.root.title("ModEx - Moderación de Extremismo en Redes Sociales")
-        self.root.geometry("850x700")
+        self.root.geometry("900x730")
 
         self.red = None
         self.agentes = []
@@ -39,7 +40,8 @@ class ModExApp:
         self.lbl_info = ttk.Label(frame_red, text="Agentes: 0 | Presupuesto Máximo (R_max): 0", font=("Arial", 10, "bold"))
         self.lbl_info.pack(anchor="w", pady=5)
 
-        columnas = ("id", "op", "recep", "inf", "costo", "beneficio")
+        # Columnas incluyendo la Estrategia (Moderado)
+        columnas = ("id", "op", "recep", "inf", "costo", "beneficio", "moderado")
         self.tabla_agentes = ttk.Treeview(frame_red, columns=columnas, show="headings", height=8)
 
         self.tabla_agentes.heading("id", text="Agente ID")
@@ -48,15 +50,24 @@ class ModExApp:
         self.tabla_agentes.heading("inf", text="Influencia (inf_i)")
         self.tabla_agentes.heading("costo", text="Esfuerzo (Costo)")
         self.tabla_agentes.heading("beneficio", text="Red. Extremismo")
+        self.tabla_agentes.heading("moderado", text="Estrategia (Moderado)")
 
-        for col in columnas:
-            self.tabla_agentes.column(col, anchor="center", width=120)
+        self.tabla_agentes.column("id", anchor="center", width=80)
+        self.tabla_agentes.column("op", anchor="center", width=100)
+        self.tabla_agentes.column("recep", anchor="center", width=110)
+        self.tabla_agentes.column("inf", anchor="center", width=110)
+        self.tabla_agentes.column("costo", anchor="center", width=110)
+        self.tabla_agentes.column("beneficio", anchor="center", width=120)
+        self.tabla_agentes.column("moderado", anchor="center", width=130)
 
         scrollbar = ttk.Scrollbar(frame_red, orient="vertical", command=self.tabla_agentes.yview)
         self.tabla_agentes.configure(yscroll=scrollbar.set)
 
         self.tabla_agentes.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
+
+        # Configurar estilos/tags para filas seleccionadas por la estrategia
+        self.tabla_agentes.tag_configure("moderado_si", background="#e6ffe6")
 
         # Frame Algoritmos
         frame_algoritmos = ttk.LabelFrame(self.root, text=" 3. Ejecución de Algoritmos ", padding=10)
@@ -66,12 +77,15 @@ class ModExApp:
         ttk.Button(frame_algoritmos, text="Ejecutar Voraz (modexV)", command=lambda: self.ejecutar_algoritmo("V")).pack(side="left", padx=10)
         ttk.Button(frame_algoritmos, text="Ejecutar Prog. Dinámica (modexPD)", command=lambda: self.ejecutar_algoritmo("PD")).pack(side="left", padx=10)
 
-        # Frame Resultados y Barra de Progreso
-        frame_res = ttk.LabelFrame(self.root, text=" 4. Resultados de la Solución ", padding=10)
+        # Frame Resultados y Verificación
+        frame_res = ttk.LabelFrame(self.root, text=" 4. Resultados de la Solución y Verificación ", padding=10)
         frame_res.pack(fill="x", padx=15, pady=5)
 
         self.lbl_resultados = ttk.Label(frame_res, text="Selecciona y ejecuta un algoritmo para ver los resultados.", font=("Arial", 10, "bold"), foreground="navy")
         self.lbl_resultados.pack(anchor="w", pady=2)
+
+        self.lbl_verificador = ttk.Label(frame_res, text="Estado Verificador: Pendiente", font=("Arial", 9, "italic"), foreground="gray")
+        self.lbl_verificador.pack(anchor="w", pady=2)
 
         # Barra de progreso visual
         self.progress_bar = ttk.Progressbar(frame_res, orient="horizontal", mode="determinate", length=780)
@@ -92,13 +106,14 @@ class ModExApp:
             self.n = len(self.agentes)
             self.lbl_archivo.config(text=os.path.basename(ruta))
             self.lbl_info.config(text=f"Agentes: {self.n} | Presupuesto Máximo (R_max): {self.R_max}")
+            self.lbl_verificador.config(text="Estado Verificador: Pendiente", foreground="gray")
 
             for item in self.tabla_agentes.get_children():
                 self.tabla_agentes.delete(item)
 
             for idx, ag in enumerate(self.agentes):
                 beneficio = float(ag.opinion ** 2 * ag.influencia)
-                self.tabla_agentes.insert("", "end", values=(f"a_{idx}", ag.opinion, float(ag.receptividad), float(ag.influencia), ag.costo_moderacion(), f"{beneficio:.1f}"))
+                self.tabla_agentes.insert("", "end", values=(f"a_{idx}", ag.opinion, float(ag.receptividad), float(ag.influencia), ag.costo_moderacion(), f"{beneficio:.1f}", "-"))
 
             self.progress_bar["value"] = 0
             messagebox.showinfo("Éxito", f"Se cargaron {self.n} agentes correctamente.")
@@ -121,6 +136,7 @@ class ModExApp:
         nombre_alg = nombres_alg[tipo]
 
         self.lbl_resultados.config(text=f" ⏳ Procesando con [{nombre_alg}]... Por favor espera.", foreground="darkorange")
+        self.lbl_verificador.config(text="Verificando la solución resultante...", foreground="darkorange")
 
         def actualizar_progreso(val):
             self.root.after(0, lambda: self.progress_bar.config(value=val))
@@ -143,11 +159,14 @@ class ModExApp:
             fin = time.time()
             tiempo_ejecucion = fin - inicio
 
-            self.root.after(0, lambda: self._finalizar_calculo(nombre_alg, est, esf, ext, tiempo_ejecucion))
+            # Conexión al verificador.py
+            errores = verificar_salida(red, est, esf, ext)
+
+            self.root.after(0, lambda: self._finalizar_calculo(nombre_alg, est, esf, ext, tiempo_ejecucion, errores))
 
         threading.Thread(target=tarea_calculo, daemon=True).start()
 
-    def _finalizar_calculo(self, nombre_alg, est, esf, ext, tiempo_ejecucion):
+    def _finalizar_calculo(self, nombre_alg, est, esf, ext, tiempo_ejecucion, errores):
         self.root.config(cursor="")
         self.progress_bar["value"] = 100
 
@@ -156,22 +175,39 @@ class ModExApp:
         self.extremismo_resultado = ext
 
         texto_tiempo = "< 0.001 s" if tiempo_ejecucion < 0.001 else f"{tiempo_ejecucion:.4f} s"
+        agentes_moderados = sum(est)
 
         self.lbl_resultados.config(
-            text=f"[{nombre_alg}] -> Extremismo: {ext:.{DECIMALES}f} | Esfuerzo: {esf}/{self.R_max} | Tiempo: {texto_tiempo}",
+            text=f"[{nombre_alg}] -> Extremismo: {ext:.{DECIMALES}f} | Esfuerzo: {esf}/{self.R_max} | Tiempo: {texto_tiempo} | Agentes Moderados: {agentes_moderados}/{self.n}",
             foreground="navy"
         )
 
+        # Actualizar visualización de estado en la interfaz
+        if not errores:
+            self.lbl_verificador.config(text="✔ Verificación exitosa: La solución es válida y cumple todas las restricciones.", foreground="green")
+        else:
+            self.lbl_verificador.config(text=f"✖ Error de Verificación: {', '.join(errores)}", foreground="red")
+
+        # Actualizar la tabla mostrando qué agente fue moderado en la estrategia
         for i, item_id in enumerate(self.tabla_agentes.get_children()):
             val = list(self.tabla_agentes.item(item_id, "values"))
-            moderado = "SÍ (1)" if est[i] == 1 else "NO (0)"
-            if len(val) == 6:
-                val.append(moderado)
-            else:
-                val[6] = moderado
-            self.tabla_agentes.item(item_id, values=val)
+            es_moderado = (est[i] == 1)
+            moderado_txt = "SÍ (1)" if es_moderado else "NO (0)"
 
-        messagebox.showinfo("Proceso Completado", f"{nombre_alg} finalizado en {texto_tiempo}.")
+            if len(val) >= 7:
+                val[6] = moderado_txt
+            else:
+                val.append(moderado_txt)
+
+            tags = ("moderado_si",) if es_moderado else ()
+            self.tabla_agentes.item(item_id, values=val, tags=tags)
+
+        # Mostrar mensaje modal con el veredicto del verificador
+        if errores:
+            detalles_error = "\n- ".join(errores)
+            messagebox.showwarning("Advertencia del Verificador", f"{nombre_alg} finalizó en {texto_tiempo}, pero se detectaron errores de verificación:\n\n- {detalles_error}")
+        else:
+            messagebox.showinfo("Proceso Completado", f"{nombre_alg} finalizó exitosamente en {texto_tiempo}.\nSolución verificada correctamente.")
 
     def guardar_archivo(self):
         if not self.estrategia_resultado:

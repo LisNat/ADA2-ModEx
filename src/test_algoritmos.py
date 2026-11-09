@@ -7,6 +7,7 @@ from itertools import product
 from algoritmos import modexFB, modexPD, modexV
 from entrada_salida import leer_entrada
 from modelo import Agente, RedSocial
+from verificador import verificar_salida
 
 DATOS = os.path.join(os.path.dirname(__file__), "..", "data")
 
@@ -194,6 +195,35 @@ class TestModexPD(unittest.TestCase):
                 red.suma_extremismo(estrategia_fb),
             )
 
+# Pruebas para validar que el verificador detecta salidas válidas e inválidas.
+class TestVerificador(unittest.TestCase):
+
+    def test_verificador_caso_valido(self):
+        red = red_ejemplo1()
+        estrategia, esfuerzo, extremismo = modexFB(red)
+        errores = verificar_salida(red, estrategia, esfuerzo, extremismo)
+        self.assertEqual(errores, [])
+
+    def test_verificador_detecta_esfuerzo_incorrecto(self):
+        red = red_ejemplo1()
+        estrategia, esfuerzo, extremismo = modexFB(red)
+        errores = verificar_salida(red, estrategia, esfuerzo + 10, extremismo)
+        self.assertTrue(any("Esfuerzo informado" in e for e in errores))
+
+    def test_verificador_detecta_exceso_presupuesto(self):
+        red = red_ejemplo1()
+        # Forzamos moderar a todos (costo 149), lo cual supera Rmax = 55
+        estrategia = [1, 1, 1]
+        esfuerzo = red.calcular_esfuerzo(estrategia)
+        extremismo = red.calcular_extremismo(estrategia)
+        errores = verificar_salida(red, estrategia, esfuerzo, extremismo)
+        self.assertTrue(any("No es aplicable" in e for e in errores))
+
+    def test_verificador_detecta_extremismo_incorrecto(self):
+        red = red_ejemplo1()
+        estrategia, esfuerzo, extremismo = modexFB(red)
+        errores = verificar_salida(red, estrategia, esfuerzo, extremismo + 5.0)
+        self.assertTrue(any("Extremismo informado" in e for e in errores))
 
 if __name__ == "__main__":
     unittest.main()
