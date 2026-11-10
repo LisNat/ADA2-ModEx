@@ -57,7 +57,10 @@ def modexFB(red, callback_progreso=None):
         red.calcular_extremismo(mejor_estrategia)
     )
 
-
+# Algoritmo voraz:
+# - Cálcula la relación beneficio/costo
+# - Ordena a los agentes según está relación
+# - Selecciona en orden aquellos cuyo costo no supera el presupuesto
 def modexV(red):
     costos, beneficios = preparar_datos(red)
     n = len(red.agentes)
@@ -90,7 +93,10 @@ def modexV(red):
         red.calcular_extremismo(estrategia)
     )
 
-
+# Algoritmo de programación dinámica:
+# - Se actualiza la solución de cada subproblema de candidato
+# - Se almacena si el candidato se modera o no
+# - Se reconstruye solución
 def modexPD(red):
     costos, beneficios = preparar_datos(red)
     n = len(red.agentes)
@@ -116,7 +122,7 @@ def modexPD(red):
         beneficio = beneficios[i]
         tomado = bytearray(R + 1)
 
-        # Se recorre w de mayor a menor para no usar dos veces el mismo candidato
+        # Se recorre w de mayor a menor para no reescribir el valor del candidato anterior
         for w in range(R, costo - 1, -1):
             if valor[w - costo] + beneficio > valor[w]:
                 valor[w] = valor[w - costo] + beneficio
