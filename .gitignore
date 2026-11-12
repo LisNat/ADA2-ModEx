@@ -5,3 +5,4 @@ dist/
 build/
 *.spec
 data/_tmp_salida_test.txt
+.vscode/
